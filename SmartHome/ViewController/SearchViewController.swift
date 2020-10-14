@@ -8,10 +8,17 @@
 
 import UIKit
 import CoreBluetooth
-class SearchViewController: UIViewController {
+protocol SearchDelegate: AnyObject {
+    func get(device: Device)
+}
+class SearchViewController: BaseViewController {
+    weak var delegate: SearchDelegate?
+    // Bluetooth
     private var centralManager: CBCentralManager!
     private var peripheral: CBPeripheral!
-    private var peripherals: Set<CBPeripheral> = []
+    private var peripherals: [CBPeripheral] = []
+
+    //UI
     @IBOutlet weak var devicesTable: UITableView!
     @IBOutlet weak var searchButton: UIButton! {
         didSet {
@@ -21,12 +28,21 @@ class SearchViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         centralManager = CBCentralManager(delegate: self, queue: nil)
+        devicesTable.dataSource = self
+        devicesTable.delegate = self
     }
     
     @IBAction func searchDevices(_ sender: Any) {
-
+        centralManager.scanForPeripherals(withServices: nil)
+        showAddedLoading(view: self.view)
+        let _ = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(stopScan), userInfo: nil, repeats: false)
     }
-
+    @objc func stopScan() {
+        hideLoading(view: self.view)
+        centralManager.stopScan()
+        peripherals = peripherals.uniques
+        devicesTable.reloadData()
+    }
 }
 extension SearchViewController: CBCentralManagerDelegate, CBPeripheralDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -34,28 +50,27 @@ extension SearchViewController: CBCentralManagerDelegate, CBPeripheralDelegate {
         switch central.state {
         case .poweredOn:
             print("Bluetooth Ativaco")
-            centralManager.scanForPeripherals(withServices: nil)
         case .poweredOff:
             print("Habilite o bluetooth")
         default:
             print("ocorreu um erro. Tente novamente")
         }
-
     }
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        print(peripheral.name)
-//        peripherals.insert(peripheral)
-//        if peripherals.count == 2 {
-//            centralManager.stopScan()
-//            for peri in peripherals {
-//                print(peri.name)
-//            }
-//        }
+        peripherals.append(peripheral)
     }
-//    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-////        self.centralManager.stopScan()
-////        self.peripheral = peripheral
-////        self.peripheral.delegate = self
-////        self.centralManager.connect(self.peripheral, options: nil)
-//    }
+}
+extension SearchViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return peripherals.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "searchCell")
+        cell?.textLabel?.text = peripherals[indexPath.row].name
+        return cell!
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+
+    }
 }

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreBluetooth
 
 class HomeViewController: UIViewController {
     @IBOutlet weak var devicesCollection: UICollectionView!
@@ -20,5 +21,17 @@ class HomeViewController: UIViewController {
         self.navigationController?.navigationBar.prefersLargeTitles = true
         self.navigationController?.navigationBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor(named: "title") ?? UIColor.systemTeal]
 
+    }
+    @IBAction func newDevice(_ sender: Any) {
+
+        if let searchVC = UIStoryboard.init(name: "Main", bundle: Bundle.main).instantiateViewController(withIdentifier: "SecondViewController") as? SearchViewController {
+            searchVC.delegate = self
+            self.navigationController?.pushViewController(searchVC, animated: true)
+        }
+    }
+}
+extension HomeViewController: SearchDelegate {
+    func get(device: Device) {
+        print(device)
     }
 }

@@ -7,8 +7,10 @@
 //
 
 import UIKit
+import CoreBluetooth
 struct Device {
     let image: UIImage
     let name: String
-    let codeBLE: String
+    let peripheral: CBPeripheral
+    let port: Int
 }
